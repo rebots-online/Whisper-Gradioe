@@ -1,0 +1,51 @@
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 AS builder
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y curl git python3 python3-pip python3-venv ffmpeg && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
+    mkdir -p /Whisper-WebUI
+
+WORKDIR /Whisper-WebUI
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Create and activate virtual environment, install dependencies
+RUN python3 -m venv venv && \
+    . venv/bin/activate && \
+    pip install --no-cache-dir -U pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Second stage for runtime
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y python3 python3-venv ffmpeg curl && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+WORKDIR /Whisper-WebUI
+
+# Copy application code and virtual environment
+COPY --from=builder /Whisper-WebUI/venv /Whisper-WebUI/venv
+COPY . .
+
+# Create directories for volumes
+RUN mkdir -p /Whisper-WebUI/models /Whisper-WebUI/outputs
+
+# Set up environment
+ENV PATH="/Whisper-WebUI/venv/bin:$PATH"
+ENV PYTHONPATH="/Whisper-WebUI:$PYTHONPATH"
+ENV LD_LIBRARY_PATH="/Whisper-WebUI/venv/lib/python3.10/site-packages/nvidia/cublas/lib:/Whisper-WebUI/venv/lib/python3.10/site-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH"
+
+# Create startup script for GPU detection and configuration
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Define volumes
+VOLUME ["/Whisper-WebUI/models", "/Whisper-WebUI/outputs"]
+
+# Set entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["app"]

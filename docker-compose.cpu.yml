@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  whisper-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    image: whisper-webui-cpu:latest
+    container_name: whisper-webui-cpu
+    restart: unless-stopped
+    volumes:
+      - ./models:/Whisper-WebUI/models
+      - ./outputs:/Whisper-WebUI/outputs
+    ports:
+      - "7860:7860"  # For Gradio WebUI
+    environment:
+      - WHISPER_TYPE=faster-whisper  # Can be: whisper, faster-whisper, insanely-fast-whisper
+      - MODEL_SIZE=small  # Default model size (tiny, base, small, medium, large-v2)
+      - COMPUTE_TYPE=float32  # float32 for CPU
+      - ENABLE_OFFLOAD=false  # No need to offload on CPU
+      - SERVER_PORT=7860
+      - SERVER_NAME=0.0.0.0
+      - API_OPEN=true  # Enable API access
+
+  whisper-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    image: whisper-webui-cpu:latest
+    container_name: whisper-backend-cpu
+    restart: unless-stopped
+    volumes:
+      - ./models:/Whisper-WebUI/models
+      - ./outputs:/Whisper-WebUI/outputs
+      - ./backend:/Whisper-WebUI/backend
+    ports:
+      - "8000:8000"  # For FastAPI backend
+    environment:
+      - WHISPER_TYPE=faster-whisper
+      - MODEL_SIZE=small
+      - COMPUTE_TYPE=float32
+      - ENABLE_OFFLOAD=false
+    command: ["backend"]

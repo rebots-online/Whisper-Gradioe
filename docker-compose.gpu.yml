@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  whisper-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: whisper-webui-gpu:latest
+    container_name: whisper-webui-gpu
+    restart: unless-stopped
+    volumes:
+      - ./models:/Whisper-WebUI/models
+      - ./outputs:/Whisper-WebUI/outputs
+    ports:
+      - "7860:7860"  # For Gradio WebUI
+      - "8000:8000"  # For FastAPI backend
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - WHISPER_TYPE=faster-whisper  # Can be: whisper, faster-whisper, insanely-fast-whisper
+      - MODEL_SIZE=medium  # Default model size (tiny, base, small, medium, large-v2)
+      - COMPUTE_TYPE=float16  # float16 for GPU, float32 for CPU
+      - ENABLE_OFFLOAD=true  # Offload model when not in use to save VRAM
+      - SERVER_PORT=7860
+      - SERVER_NAME=0.0.0.0
+      - API_OPEN=true  # Enable API access
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  whisper-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: whisper-webui-gpu:latest
+    container_name: whisper-backend-gpu
+    restart: unless-stopped
+    volumes:
+      - ./models:/Whisper-WebUI/models
+      - ./outputs:/Whisper-WebUI/outputs
+      - ./backend:/Whisper-WebUI/backend
+    ports:
+      - "8000:8000"  # For FastAPI backend
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - WHISPER_TYPE=faster-whisper
+      - MODEL_SIZE=medium
+      - COMPUTE_TYPE=float16
+      - ENABLE_OFFLOAD=true
+    command: ["backend"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
