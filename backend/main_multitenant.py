@@ -25,6 +25,10 @@ from backend.routers.auth.router import auth_router
 from backend.routers.tenant.router import tenant_router
 from backend.routers.reseller.router import reseller_router
 from backend.routers.workflow.router import workflow_router
+from backend.routers.job import job_router
+from backend.routers.websocket import websocket_router
+from backend.job_queue import start_job_queue, stop_job_queue
+from backend.job_queue.handlers import register_handlers
 
 
 def clean_cache_thread(ttl: int, frequency: int) -> threading.Thread:
@@ -56,7 +60,16 @@ async def lifespan(app: FastAPI):
     cache_thread = clean_cache_thread(server_config["cache"]["ttl"], server_config["cache"]["frequency"])
     cache_thread.start()
 
+    # Start job queue
+    start_job_queue()
+
+    # Register job handlers
+    register_handlers()
+
     yield
+
+    # Stop job queue
+    stop_job_queue()
 
     # Release VRAM when server shutdown
     transcription_pipeline = None
@@ -67,7 +80,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whisper-WebUI-Backend",
     description=f"""
-    REST API for Whisper-WebUI with multi-tenant support. 
+    REST API for Whisper-WebUI with multi-tenant support.
     Swagger UI is available via /docs or root URL with redirection. Redoc is available via /redoc.
     """,
     version="0.1.0",
@@ -105,6 +118,14 @@ app = FastAPI(
         {
             "name": "Tasks",
             "description": "Task management endpoints for tracking job progress."
+        },
+        {
+            "name": "Jobs",
+            "description": "Job management endpoints for processing transcription jobs."
+        },
+        {
+            "name": "WebSockets",
+            "description": "WebSocket endpoints for real-time job updates."
         }
     ]
 )
@@ -130,6 +151,8 @@ app.include_router(transcription_router, tags=["Transcription"])
 app.include_router(vad_router, tags=["VAD"])
 app.include_router(bgm_separation_router, tags=["BGM Separation"])
 app.include_router(task_router, tags=["Tasks"])
+app.include_router(job_router, prefix="/api/jobs", tags=["Jobs"])
+app.include_router(websocket_router, tags=["WebSockets"])
 
 
 @app.get("/", response_class=RedirectResponse, include_in_schema=False)

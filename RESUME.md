@@ -6,19 +6,23 @@ We are implementing a multi-tenant reseller panel for the Whisper-WebUI project,
 
 ## Current Status
 
-We have completed the initial architecture design and the foundation setup, including:
+We have completed the initial architecture design, foundation setup, and job management system, including:
 
 1. **Database Schema Design**: Created a comprehensive multi-tenant database schema with tables for resellers, tenants, users, workflows, jobs, etc.
 
-2. **SQL Migration Scripts**: Developed scripts for creating the multi-tenant tables and migrating existing data.
+2. **Tenant Context Middleware**: Implemented middleware for extracting tenant information from authentication tokens and adding it to request state.
 
-3. **Tenant Context Middleware**: Implemented middleware for extracting tenant information from authentication tokens and adding it to request state.
+3. **Authentication System**: Created a JWT-based authentication system with support for reseller, tenant, and user roles.
 
-4. **Authentication System**: Created a JWT-based authentication system with support for reseller, tenant, and user roles.
+4. **Job Queue System**: Implemented a tenant-isolated job queue for processing transcription jobs with priority queuing and resource allocation.
 
-5. **Branding System Integration**: Reviewed the existing branding system from RobinsAI.World-Admin and documented the integration approach.
+5. **WebSocket Server**: Created a WebSocket server for real-time job status updates with tenant isolation and job subscriptions.
 
-The project is now ready to move to the next phase: implementing the job management and polling system.
+6. **Job Polling API**: Implemented REST API endpoints for job status polling with ETag support for efficient polling.
+
+7. **Branding System Integration**: Reviewed the existing branding system from RobinsAI.World-Admin and documented the integration approach.
+
+The project is now ready to move to the next phase: developing the reseller panel.
 
 ## Key Components
 
@@ -36,15 +40,15 @@ The project is now ready to move to the next phase: implementing the job managem
 
 ## Next Steps
 
-1. **Design Job Queue System**: Create a job queue system with tenant isolation for processing transcription jobs.
+1. **Create Reseller Dashboard**: Implement a comprehensive dashboard with key metrics (customers, revenue, usage).
 
-2. **Implement Real-Time Job Updates**: Set up a WebSocket server for real-time job status updates with tenant isolation.
+2. **Build Customer Management**: Create interfaces for managing tenants, including creation, configuration, and monitoring.
 
-3. **Create Job Polling Fallback**: Implement REST API endpoints for job status polling as a fallback mechanism.
+3. **Develop Workflow Templates**: Create a workflow template designer using Flowise/React Flow for resellers to create and share templates.
 
 4. **Integrate Flowise/React Flow**: Begin integration of Flowise or React Flow for the workflow builder interface.
 
-5. **Develop Reseller Panel**: Create the reseller dashboard for managing customers, subscriptions, and workflows.
+5. **Implement Customer Portal**: Create the customer-facing portal for managing workflows and jobs.
 
 ## Technical Decisions
 
